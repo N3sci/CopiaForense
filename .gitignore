@@ -1,0 +1,16 @@
+# Ambienti virtuali
+venv/
+
+# Cartelle di build di PyInstaller
+build/
+dist/
+*.spec
+
+# Cache di Python e Mac
+__pycache__/
+.DS_Store
+*.pyc
+
+# Cartelle di test locali (opzionale, se non vuoi caricare i file di prova)
+test_sorgente/
+test_destinazione/
