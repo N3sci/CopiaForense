@@ -9,20 +9,18 @@ class ForensicReport:
         self.data_acquisizione = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
 
     def _sana_testo(self, testo: str) -> str:
-        """
-        Esegue il fallback dei caratteri non supportati dal font Latin-1 (es. emoji, CJK),
-        prevenendo l'eccezione UnicodeEncodeError durante il rendering vettoriale.
-        """
+        """Fallback per caratteri non supportati dal font Latin-1."""
         if not testo:
             return ""
         return str(testo).encode('latin-1', errors='replace').decode('latin-1')
 
     def genera_pdf(self, registro_dati: list[dict], percorso_salvataggio: str) -> None:
-        """Compila e serializza il documento PDF su disco."""
+        """Compila e serializza il documento PDF su disco includendo i MAC Times."""
         pdf = FPDF(orientation="P", unit="mm", format="A4")
         pdf.add_page()
         pdf.set_auto_page_break(auto=True, margin=15)
         
+        # INTESTAZIONE
         pdf.set_font("helvetica", style="B", size=16)
         pdf.cell(0, 10, "VERBALE DI ACQUISIZIONE LOGICA FORENSE", align="C", new_x="LMARGIN", new_y="NEXT")
         pdf.ln(5) 
@@ -39,6 +37,7 @@ class ForensicReport:
         pdf.line(10, pdf.get_y() + 2, 200, pdf.get_y() + 2)
         pdf.ln(10)
         
+        # REGISTRO OPERAZIONI
         for file_data in registro_dati:
             esito = file_data.get("esito", "SALTATO")
             percorso_sicuro = self._sana_testo(file_data.get('percorso', ''))
@@ -58,7 +57,14 @@ class ForensicReport:
             pdf.set_font("courier", size=9) 
             
             if esito == "SUCCESSO":
+                # Stampa Hash
                 pdf.multi_cell(0, 5, f"    SHA-256: {file_data.get('hash_sha256', 'N/D')}", new_x="LMARGIN", new_y="NEXT")
+                # Stampa Metadati Fisici (Dimensioni e MAC Times)
+                dim_kb = round(file_data.get('dimensione_byte', 0) / 1024, 2)
+                pdf.multi_cell(0, 5, f"    Size   : {file_data.get('dimensione_byte', 0)} bytes ({dim_kb} KB)", new_x="LMARGIN", new_y="NEXT")
+                pdf.multi_cell(0, 5, f"    Modif. : {file_data.get('data_modifica', 'N/D')}", new_x="LMARGIN", new_y="NEXT")
+                pdf.multi_cell(0, 5, f"    Access.: {file_data.get('data_accesso', 'N/D')}", new_x="LMARGIN", new_y="NEXT")
+                pdf.multi_cell(0, 5, f"    Creat. : {file_data.get('data_creazione', 'N/D')}", new_x="LMARGIN", new_y="NEXT")
             else:
                 pdf.multi_cell(0, 5, f"    Errore : {errore_sicuro}", new_x="LMARGIN", new_y="NEXT")
             
