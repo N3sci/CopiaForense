@@ -1,23 +1,46 @@
-# Strumento di Acquisizione Logica Forense
+# Forensic Logical Acquisition Tool
 
-Questo progetto è un applicativo portable sviluppato in Python per l'acquisizione logica di dati e file a fini forensi. È progettato per garantire la catena di custodia, l'immodificabilità del dato (Art. 359 CPP) e la ripetibilità dell'operazione, risolvendo le problematiche comuni che si verificano durante le copie di massa su file system eterogenei.
+This project is a portable application developed in Python for the logical acquisition of data and files for forensic purposes. It is designed to ensure the chain of custody, data immutability, and the repeatability of the operation, solving common issues that occur during mass copying across heterogeneous file systems.
 
-## 🚀 Caratteristiche Principali
+## 🚀 Key Features
 
-- **Integrità Crittografica:** Calcolo automatico dell'hash **SHA-256** pre e post-copia. La validazione 1:1 garantisce l'assoluta corrispondenza tra il reperto originale e la copia.
-- **Estrazione MAC Times:** Preservazione e storicizzazione a verbale dei metadati temporali originali (Data Modifica, Accesso e Creazione) tramite `os.stat`, bypassando i limiti dei file system di destinazione (es. FAT32).
-- **Sandboxing e Gestione Eccezioni:** Il motore di copia intercetta blocchi del Sistema Operativo (file in uso) e `PermissionError`, registrandoli a verbale senza interrompere il flusso operativo (No Crash).
-- **Bypass MAX_PATH (Windows):** Implementazione dinamica del prefisso `\\?\` per aggirare il limite storico dei 260 caratteri dei percorsi Windows.
-- **Sicurezza Anti-Inception:** Controllo algoritmico basato su `os.path.commonpath` per impedire la selezione di una destinazione annidata all'interno della sorgente (previene i loop di ricorsione).
-- **Pre-flight Check:** Calcolo dello spazio richiesto (con buffer del 10%) prima di interagire con il supporto originale.
-- **Reportistica Duale e Firma:** Generazione automatica di un verbale *Human-Readable* (PDF) e uno *Machine-Readable* (JSON). Il tool conclude l'operazione generando una firma SHA-256 dei verbali stessi per certificarne l'immodificabilità.
+- **Cryptographic Integrity:** Automatic pre- and post-copy **SHA-256** hash calculation. The 1:1 validation ensures absolute correspondence between the original evidence and the copy.
+- **MAC Times Extraction:** Preservation and reporting of the original temporal metadata (Modification, Access, and Creation Dates) via `os.stat`, bypassing the limitations of destination file systems (e.g., FAT32).
+- **Sandboxing & Exception Handling:** The copy engine intercepts Operating System locks (files in use) and `PermissionError`s, recording them in the report without interrupting the operational flow (No Crash).
+- **MAX_PATH Bypass (Windows):** Dynamic implementation of the `\\?\` prefix to bypass the historical 260-character path limit on Windows.
+- **Anti-Inception Security:** Algorithmic check based on `os.path.commonpath` to prevent selecting a destination nested within the source (prevents recursion loops).
+- **Pre-flight Check:** Calculation of required disk space (with a 10% buffer) before interacting with the original media.
+- **Dual Reporting and Signature:** Automatic generation of a *Human-Readable* report (PDF) and a *Machine-Readable* one (JSON). The tool concludes the operation by generating a SHA-256 signature of the reports themselves to certify their immutability.
 
-## 🛠️ Requisiti e Librerie
+## 📦 Standalone Executables
+The binary files attached to the GitHub Releases (automatically generated via GitHub Actions) do not require Python or other dependencies to be installed. Download the appropriate version for your operating system and CPU architecture:
+- **Windows (Intel/AMD/ARM):** `CopiaForense-windows-x64.zip`
+- **macOS (Intel):** `CopiaForense-macos-intel.zip`
+- **macOS (Apple Silicon):** `CopiaForense-macos-silicon.zip`
+- **Linux (Intel/AMD):** `CopiaForense-linux-x64.zip`
+- **Linux (ARM64):** `CopiaForense-linux-arm64.zip`
 
-Il progetto utilizza principalmente moduli della Standard Library di Python (`os`, `shutil`, `hashlib`, `tkinter`).
-L'unica dipendenza esterna richiesta per la generazione del verbale è:
+## ⚠️ Running the Executables (macOS & Windows)
+
+Because this tool is an independent open-source project and not digitally signed by a paid commercial certificate, your Operating System might initially block its execution. This is normal and expected behavior.
+
+**For macOS Users (Gatekeeper):**
+If you see an "Apple could not verify..." warning:
+1. Go to **System Settings** -> **Privacy & Security**.
+2. Scroll down to the security section and click **Open Anyway** next to the blocked app notification.
+3. Alternatively, in Finder, **Right-Click** the executable and select **Open**.
+
+**For Windows Users (SmartScreen):**
+If you see a "Windows protected your PC" blue screen warning:
+1. Click on **More info**.
+2. Click the **Run anyway** button that appears at the bottom.
+
+## 🛠️ Development Requirements
+
+The project mainly uses modules from the Python Standard Library (`os`, `shutil`, `hashlib`, `tkinter`).
+The only external dependency required for generating the PDF report is:
 - `fpdf2`
 
-Per installare le dipendenze in ambiente di sviluppo:
+To install the dependencies in a development environment:
 ```bash
 pip install -r requirements.txt
