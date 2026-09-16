@@ -19,7 +19,7 @@ jobs:
             asset_name: CopiaForense-linux
           - os: windows-latest
             executable_name: CopiaForense.exe
-            asset_name: CopiaForense-windows.exe
+            asset_name: CopiaForense-windows
           - os: macos-latest
             executable_name: CopiaForense
             asset_name: CopiaForense-macos
@@ -41,20 +41,20 @@ jobs:
     - name: Build executable
       run: pyinstaller --onefile --name CopiaForense main.py
 
-    - name: Rename and zip executable (Linux / macOS)
+    - name: Rename and Zip (Linux / macOS)
       if: runner.os != 'Windows'
       run: |
         mv dist/${{ matrix.executable_name }} dist/${{ matrix.asset_name }}
         cd dist && zip ${{ matrix.asset_name }}.zip ${{ matrix.asset_name }}
 
-    - name: Rename executable (Windows)
+    - name: Rename and Zip (Windows)
       if: runner.os == 'Windows'
-      run: move dist\${{ matrix.executable_name }} dist\${{ matrix.asset_name }}
+      run: |
+        move dist\${{ matrix.executable_name }} dist\${{ matrix.asset_name }}.exe
+        cd dist
+        Compress-Archive -Path ${{ matrix.asset_name }}.exe -DestinationPath ${{ matrix.asset_name }}.zip
 
     - name: Upload to Release
       uses: softprops/action-gh-release@v2
       with:
-        fail_on_unmatched_files: false
-        files: |
-          dist/${{ matrix.asset_name }}.zip
-          dist/${{ matrix.asset_name }}
+        files: dist/*.zip
