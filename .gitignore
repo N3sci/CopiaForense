@@ -14,3 +14,5 @@ __pycache__/
 # Cartelle di test locali (opzionale, se non vuoi caricare i file di prova)
 test_sorgente/
 test_destinazione/
+Tesi/
+Copia di test/

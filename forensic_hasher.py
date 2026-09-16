@@ -3,7 +3,7 @@ import hashlib
 class ForensicHasher:
     """Gestisce il calcolo degli hash crittografici per l'integrità dei reperti."""
     
-    def __init__(self, chunk_size: int = 65536):
+    def __init__(self, chunk_size: int = 4194304):
         self.chunk_size = chunk_size
 
     def calculate_sha256(self, file_path: str) -> str:
@@ -15,7 +15,7 @@ class ForensicHasher:
             sha256_hash = hashlib.sha256()
             
             with open(file_path, "rb") as f:
-                # Costrutto pythonic avanzato per la lettura a chunk fino a EOF (b"")
+                # Itera sul file stream via chunk per contenere l'impronta in RAM
                 for chunk in iter(lambda: f.read(self.chunk_size), b""):
                     sha256_hash.update(chunk)
                     

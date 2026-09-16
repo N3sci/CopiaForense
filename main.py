@@ -22,6 +22,10 @@ def prompt_directory_selection() -> tuple[str, str]:
     )
     sorgente = filedialog.askdirectory(title="1. Seleziona la cartella SORGENTE (Reperto)")
     destinazione = filedialog.askdirectory(title="2. Seleziona la cartella di DESTINAZIONE (Pendrive)")
+    
+    # Distrugge la root di Tkinter per prevenire l'hanging del thread UI su macOS (WindowServer beach balling)
+    root.destroy()
+    
     return sorgente, destinazione
 
 def is_safe_path(source: str, dest: str) -> bool:
@@ -49,15 +53,17 @@ def format_mac_time(timestamp: float) -> str:
 
 
 # --- CORE LOGIC ---
+CHUNK_SIZE = 4194304  # 4MB
 
 def process_directories(source_dir: str, dest_dir: str) -> list[dict]:
     """
     Orchestra l'estrazione metadati, l'esplorazione del file system, l'hashing e la copia logica.
     Restituisce la struttura dati completa contenente il registro delle operazioni.
     """
-    hasher = ForensicHasher(chunk_size=65536)
+    hasher = ForensicHasher(chunk_size=CHUNK_SIZE)
     copier = ForensicCopier()
     registro = []
+    dir_metadata_to_copy = []
 
     if not os.path.exists(dest_dir):
         os.makedirs(dest_dir)
@@ -68,6 +74,9 @@ def process_directories(source_dir: str, dest_dir: str) -> list[dict]:
         
         if not os.path.exists(cartella_dest_corrente):
             os.makedirs(cartella_dest_corrente)
+            
+        # Memorizza i path delle directory per ripristinare i MAC times originali post-copia
+        dir_metadata_to_copy.append((root, cartella_dest_corrente))
 
         for nome_file in files:
             percorso_sorgente = os.path.join(root, nome_file)
@@ -123,30 +132,39 @@ def process_directories(source_dir: str, dest_dir: str) -> list[dict]:
             
             registro.append(dati_file)
 
+    # Ripristina i metadati delle directory alla fine per evitare alterazioni dovute all'I/O
+    for src_dir, dst_dir in dir_metadata_to_copy:
+        try:
+            shutil.copystat(src_dir, dst_dir)
+        except OSError:
+            pass
+
     return registro
 
 
 # --- GENERAZIONE REPORT E FIRME ---
 
-def genera_report_strutturato(registro: list[dict], path_destinazione: str) -> str:
+def genera_report_strutturato(registro: list[dict], path_destinazione: str, nome_sorgente: str = "") -> str:
     """Serializza il registro in formato JSON per l'ingestione automatizzata (es. ElasticSearch/Splunk)."""
-    json_path = os.path.join(path_destinazione, "Verbale_Strutturato.json")
+    nome_file = f"Verbale_Strutturato_{nome_sorgente}.json" if nome_sorgente else "Verbale_Strutturato.json"
+    json_path = os.path.join(path_destinazione, nome_file)
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(registro, f, indent=4, ensure_ascii=False)
     return json_path
 
-def firma_catena_custodia(paths_verbali: list[str], path_destinazione: str):
+def firma_catena_custodia(paths_verbali: list[str], path_destinazione: str, nome_sorgente: str = ""):
     """Calcola l'hash dei verbali generati per garantirne l'immodificabilità."""
     hasher = ForensicHasher()
-    firma_path = os.path.join(path_destinazione, "Certificato_Firma_Verbali.txt")
+    nome_file = f"Certificato_Firma_Verbali_{nome_sorgente}.txt" if nome_sorgente else "Certificato_Firma_Verbali.txt"
+    firma_path = os.path.join(path_destinazione, nome_file)
     
     with open(firma_path, 'w', encoding='utf-8') as f:
         f.write("=== CERTIFICATO DI IMMODIFICABILITA' DEI VERBALI ===\n")
         f.write(f"Data: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S UTC')}\n\n")
         for path in paths_verbali:
             hash_val = hasher.calculate_sha256(path)
-            nome_file = os.path.basename(path)
-            f.write(f"{nome_file}\nSHA-256: {hash_val}\n\n")
+            nome_file_verbale = os.path.basename(path)
+            f.write(f"{nome_file_verbale}\nSHA-256: {hash_val}\n\n")
 
 
 def main() -> None:
@@ -175,7 +193,14 @@ def main() -> None:
     print(f"💾 Storage Destinazione: {cartella_destinazione}\n")
     print("Avvio procedura di estrazione logica...")
     
-    registro_operazioni = process_directories(cartella_sorgente, cartella_destinazione)
+    # Inizializza la root dir di destinazione mantenendo il nome del volume/cartella sorgente
+    nome_sorgente = os.path.basename(os.path.normpath(cartella_sorgente))
+    if not nome_sorgente:
+        nome_sorgente = "Acquisizione_Reperto"
+        
+    cartella_acquisizione = os.path.join(cartella_destinazione, nome_sorgente)
+    
+    registro_operazioni = process_directories(cartella_sorgente, cartella_acquisizione)
 
     # 3. Reportistica
     print(f"\nOperazioni concluse. File processati: {len(registro_operazioni)}")
@@ -183,14 +208,14 @@ def main() -> None:
     
     # PDF
     report_pdf = ForensicReport(operatore="Operatore PG")
-    path_pdf = os.path.join(cartella_destinazione, "Verbale_Acquisizione.pdf")
-    report_pdf.genera_pdf(registro_operazioni, path_pdf)
+    path_pdf = os.path.join(cartella_destinazione, f"Verbale_Acquisizione_{nome_sorgente}.pdf")
+    report_pdf.genera_pdf_riassuntivo(registro_operazioni, path_pdf)
     
     # JSON Strutturato
-    path_json = genera_report_strutturato(registro_operazioni, cartella_destinazione)
+    path_json = genera_report_strutturato(registro_operazioni, cartella_destinazione, nome_sorgente)
     
     # Firma Verbali
-    firma_catena_custodia([path_pdf, path_json], cartella_destinazione)
+    firma_catena_custodia([path_pdf, path_json], cartella_destinazione, nome_sorgente)
     
     print(f"✅ Acquisizione completata e sigillata in: {cartella_destinazione}")
 
