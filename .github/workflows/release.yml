@@ -9,20 +9,31 @@ permissions:
 
 jobs:
   build:
-    name: Build for ${{ matrix.os }}
+    name: Build for ${{ matrix.asset_name }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            executable_name: CopiaForense
-            asset_name: CopiaForense-linux
+          # Windows (Intel/AMD) - Funziona anche su ARM tramite emulatore nativo
           - os: windows-latest
             executable_name: CopiaForense.exe
-            asset_name: CopiaForense-windows
-          - os: macos-latest
+            asset_name: CopiaForense-windows-x64
+          # Linux (Intel/AMD)
+          - os: ubuntu-22.04
             executable_name: CopiaForense
-            asset_name: CopiaForense-macos
+            asset_name: CopiaForense-linux-x64
+          # Linux (ARM64 / Apple Silicon)
+          - os: ubuntu-24.04-arm
+            executable_name: CopiaForense
+            asset_name: CopiaForense-linux-arm64
+          # macOS (Intel)
+          - os: macos-13
+            executable_name: CopiaForense
+            asset_name: CopiaForense-macos-intel
+          # macOS (Apple Silicon M1/M2/M3)
+          - os: macos-14
+            executable_name: CopiaForense
+            asset_name: CopiaForense-macos-silicon
 
     steps:
     - name: Checkout repository
