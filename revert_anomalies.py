@@ -53,16 +53,16 @@ def revert_corrupted_magic(original_path, entry):
             f.seek(0)
             f.write(original_bytes)
         return True
-    # Se il file era troppo piccolo, non era stato corrotto e la metadata è vuota
+    # If the file was too small, it was not corrupted and metadata is empty
     return True
 
 def main():
-    parser = argparse.ArgumentParser(description="Script per annullare l'iniezione delle anomalie.")
-    parser.add_argument("--input", default="ground_truth.json", help="Percorso del ground truth")
+    parser = argparse.ArgumentParser(description="Script to revert the injection of anomalies.")
+    parser.add_argument("--input", default="ground_truth.json", help="Path to the ground truth file")
     args = parser.parse_args()
     
     if not os.path.exists(args.input):
-        print(f"Errore: File '{args.input}' non trovato.")
+        print(f"Error: File '{args.input}' not found.")
         return
         
     with open(args.input, "r", encoding="utf-8") as f:
@@ -97,9 +97,9 @@ def main():
         except Exception as e:
             error_count += 1
             
-    print(f"File ripristinati con successo: {success_count}")
+    print(f"Files successfully reverted: {success_count}")
     if error_count > 0:
-        print(f"File con errori: {error_count}")
+        print(f"Files with errors: {error_count}")
 
 if __name__ == "__main__":
     main()

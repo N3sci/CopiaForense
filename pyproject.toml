@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "copia-forense"
+version = "1.0.0"
+authors = [
+  { name="Mathias Nesci" }
+]
+description = "Forensic Logical Acquisition Tool with SHA-256 validation."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "fpdf2",
+]
+
+[project.scripts]
+copia-forense = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "forensic_copier", "forensic_hasher", "logger_pdf"]
